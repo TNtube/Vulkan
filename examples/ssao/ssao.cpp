@@ -8,6 +8,7 @@
 
 #include "vulkanexamplebase.h"
 #include "VulkanglTFModel.h"
+#include "VulkanMemoryTracker.hpp"
 
 #define SSAO_KERNEL_SIZE 64
 #define SSAO_RADIUS 0.3f
@@ -133,6 +134,12 @@ public:
 	{
 		if (device) {
 			vkDestroySampler(device, colorSampler, nullptr);
+			VKS_TRACK_FREE(frameBuffers.offscreen.position.mem);
+			VKS_TRACK_FREE(frameBuffers.offscreen.normal.mem);
+			VKS_TRACK_FREE(frameBuffers.offscreen.albedo.mem);
+			VKS_TRACK_FREE(frameBuffers.offscreen.depth.mem);
+			VKS_TRACK_FREE(frameBuffers.ssao.color.mem);
+			VKS_TRACK_FREE(frameBuffers.ssaoBlur.color.mem);
 			frameBuffers.offscreen.position.destroy(device);
 			frameBuffers.offscreen.normal.destroy(device);
 			frameBuffers.offscreen.albedo.destroy(device);
@@ -174,7 +181,8 @@ public:
 		VkImageUsageFlagBits usage,
 		FrameBufferAttachment *attachment,
 		uint32_t width,
-		uint32_t height)
+		uint32_t height,
+		const std::string& tag = "")
 	{
 		VkImageAspectFlags aspectMask = 0;
 
@@ -215,6 +223,9 @@ public:
 		VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &attachment->mem));
 		VK_CHECK_RESULT(vkBindImageMemory(device, attachment->image, attachment->mem, 0));
 
+		// Track memory allocation
+		VKS_TRACK_ALLOC(attachment->mem, memAlloc.allocationSize, memAlloc.memoryTypeIndex, tag);
+
 		VkImageViewCreateInfo imageView = vks::initializers::imageViewCreateInfo();
 		imageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		imageView.format = format;
@@ -249,16 +260,16 @@ public:
 		assert(validDepthFormat);
 
 		// G-Buffer
-		createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.position, width, height);	// Position + Depth
-		createAttachment(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.normal, width, height);			// Normals
-		createAttachment(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.albedo, width, height);			// Albedo (color)
-		createAttachment(attDepthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, &frameBuffers.offscreen.depth, width, height);			// Depth
+		createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.position, width, height, "gbuffer_position");
+		createAttachment(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.normal, width, height, "gbuffer_normal");
+		createAttachment(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.albedo, width, height, "gbuffer_albedo");
+		createAttachment(attDepthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, &frameBuffers.offscreen.depth, width, height, "gbuffer_depth");
 
 		// SSAO
-		createAttachment(VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.ssao.color, ssaoWidth, ssaoHeight);				// Color
+		createAttachment(VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.ssao.color, ssaoWidth, ssaoHeight, "ssao_output");
 
 		// SSAO blur
-		createAttachment(VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.ssaoBlur.color, width, height);					// Color
+		createAttachment(VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.ssaoBlur.color, width, height, "ssao_blur");
 
 		// Render passes
 
@@ -754,6 +765,11 @@ public:
 		setupDescriptors();
 		preparePipelines();
 		prepared = true;
+
+		VKS_MEMORY_SUMMARY();
+		if (benchmark.active) {
+			VKS_MEMORY_SAVE_CSV("benchmark/results/ssao_memory_baseline.csv");
+		}
 	}
 
 	void buildCommandBuffer()
