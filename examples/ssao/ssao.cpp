@@ -9,6 +9,7 @@
 #include "vulkanexamplebase.h"
 #include "VulkanglTFModel.h"
 #include "VulkanMemoryTracker.hpp"
+#include "VulkanScreenshot.hpp"
 
 #define SSAO_KERNEL_SIZE 64
 #define SSAO_RADIUS 0.3f
@@ -117,6 +118,16 @@ public:
 
 	// One sampler for the frame buffer color attachments
 	VkSampler colorSampler;
+
+	bool screenshotSaved = false;
+
+	void saveScreenshot(const std::string& filename) {
+		vks::Screenshot::save(
+			device, physicalDevice, vulkanDevice, queue,
+			swapChain.images[currentBuffer], swapChain.colorFormat,
+			width, height, filename);
+		screenshotSaved = true;
+	}
 
 	VulkanExample() : VulkanExampleBase()
 	{
@@ -927,6 +938,14 @@ public:
 			overlay->checkBox("Enable SSAO", &uboSSAOParams.ssao);
 			overlay->checkBox("SSAO blur", &uboSSAOParams.ssaoBlur);
 			overlay->checkBox("SSAO pass only", &uboSSAOParams.ssaoOnly);
+		}
+		if (overlay->header("Capture")) {
+			if (overlay->button("Take screenshot")) {
+				saveScreenshot("ssao_baseline.ppm");
+			}
+			if (screenshotSaved) {
+				overlay->text("Screenshot saved");
+			}
 		}
 	}
 };
