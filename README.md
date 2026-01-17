@@ -4,6 +4,24 @@ A comprehensive collection of open source C++ examples for [Vulkan®](https://ww
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BHXPMV6ZKPH9E)
 
+## Hybrid Precision info
+Building :
+```bash
+cmake --build . --config Release --target ssao
+```
+
+benchmark time and memory :
+```bash
+./bin/Release/ssao.exe --benchmark --benchwarmup 2 --benchruntime 30 --benchfilename "benchmark/results/ssao_baseline.csv" --benchframetimes --width 1920 --height 1080
+```
+
+benchmark screenshots :
+```bash
+./bin/Release/ssao.exe --benchmark --benchwarmup 2 --benchruntime 3 --benchscreenshotinterval 100 --benchscreenshotprefix ssao_fp32
+```
+
+
+
 ## Table of Contents
 + [Official Khronos Vulkan Samples](#official-khronos-vulkan-samples)
 + [Cloning](#Cloning)
