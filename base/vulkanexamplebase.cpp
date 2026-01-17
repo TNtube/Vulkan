@@ -7,6 +7,7 @@
 */
 
 #include "vulkanexamplebase.h"
+#include "VulkanScreenshot.hpp"
 
 #if defined(VK_EXAMPLE_XCODE_GENERATED)
 #if (defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT))
@@ -321,6 +322,16 @@ void VulkanExampleBase::renderLoop()
 		if (wl_display_dispatch_pending(display) == -1)
 			return;
 #endif
+		// Set up screenshot callback if interval is configured
+		if (benchmark.screenshotInterval > 0) {
+			benchmark.screenshotCallback = [this](const std::string& filename) {
+				vkDeviceWaitIdle(device);
+				vks::Screenshot::save(
+					device, physicalDevice, vulkanDevice, queue,
+					swapChain.images[currentBuffer], swapChain.colorFormat,
+					width, height, filename);
+			};
+		}
 		benchmark.run([=, this] { render(); }, vulkanDevice->properties);
 		vkDeviceWaitIdle(device);
 		if (!benchmark.filename.empty()) {
@@ -774,6 +785,8 @@ VulkanExampleBase::VulkanExampleBase()
 	commandLineParser.add("benchmarkresultfile", { "-bf", "--benchfilename" }, 1, "Set file name for benchmark results");
 	commandLineParser.add("benchmarkresultframes", { "-bt", "--benchframetimes" }, 0, "Save frame times to benchmark results file");
 	commandLineParser.add("benchmarkframes", { "-bfs", "--benchmarkframes" }, 1, "Only render the given number of frames");
+	commandLineParser.add("benchscreenshotinterval", { "-bsi", "--benchscreenshotinterval" }, 1, "Capture screenshot every N frames during benchmark");
+	commandLineParser.add("benchscreenshotprefix", { "-bsp", "--benchscreenshotprefix" }, 1, "Prefix for benchmark screenshot filenames");
 #if (!(defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)))
 	commandLineParser.add("resourcepath", { "-rp", "--resourcepath" }, 1, "Set path for dir where assets and shaders folder is present");
 #endif
@@ -831,6 +844,12 @@ VulkanExampleBase::VulkanExampleBase()
 	}
 	if (commandLineParser.isSet("benchmarkframes")) {
 		benchmark.outputFrames = commandLineParser.getValueAsInt("benchmarkframes", benchmark.outputFrames);
+	}
+	if (commandLineParser.isSet("benchscreenshotinterval")) {
+		benchmark.screenshotInterval = commandLineParser.getValueAsInt("benchscreenshotinterval", 0);
+	}
+	if (commandLineParser.isSet("benchscreenshotprefix")) {
+		benchmark.screenshotPrefix = commandLineParser.getValueAsString("benchscreenshotprefix", benchmark.screenshotPrefix);
 	}
 #if (!(defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)))
 	if(commandLineParser.isSet("resourcepath")) {
@@ -1906,6 +1925,16 @@ void VulkanExampleBase::displayLinkOutputCb()
 {
 #if defined(VK_EXAMPLE_XCODE_GENERATED)
 	if (benchmark.active) {
+		// Set up screenshot callback if interval is configured
+		if (benchmark.screenshotInterval > 0) {
+			benchmark.screenshotCallback = [this](const std::string& filename) {
+				vkDeviceWaitIdle(device);
+				vks::Screenshot::save(
+					device, physicalDevice, vulkanDevice, queue,
+					swapChain.images[currentBuffer], swapChain.colorFormat,
+					width, height, filename);
+			};
+		}
 		benchmark.run([=] { render(); }, vulkanDevice->properties);
 		if (benchmark.filename != "") {
 			benchmark.saveResults();

@@ -29,6 +29,11 @@ namespace vks
 		std::vector<double> frameTimes;
 		std::string filename = "";
 
+		// Screenshot capture during benchmark
+		uint32_t screenshotInterval = 0;  // 0 = disabled, >0 = capture every N frames
+		std::string screenshotPrefix = "benchmark";
+		std::function<void(const std::string&)> screenshotCallback;
+
 		double runtime = 0.0;
 		uint32_t frameCount = 0;
 
@@ -65,6 +70,11 @@ namespace vks
 					runtime += tDiff;
 					frameTimes.push_back(tDiff);
 					frameCount++;
+					// Capture screenshot at specified interval
+					if (screenshotInterval > 0 && screenshotCallback && (frameCount % screenshotInterval == 0)) {
+						std::string filename = "benchmark/results/" + screenshotPrefix + "_frame" + std::to_string(frameCount) + ".ppm";
+						screenshotCallback(filename);
+					}
 					if (outputFrames != -1 && outputFrames == frameCount) break;
 				};
 				std::cout << std::fixed << std::setprecision(3);
