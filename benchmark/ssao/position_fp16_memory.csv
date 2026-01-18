@@ -1,0 +1,12 @@
+metric,value_bytes,value_mb
+total_allocated,57507840,54.8438
+peak_allocated,57507840,54.8438
+allocation_count,6,6
+
+tag,size_bytes,size_mb
+gbuffer_depth,17694720,16.875
+gbuffer_normal,8847360,8.4375
+gbuffer_position,17694720,16.875
+gbuffer_albedo,8847360,8.4375
+ssao_output,2211840,2.10938
+ssao_blur,2211840,2.10938
