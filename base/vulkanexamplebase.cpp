@@ -786,7 +786,7 @@ VulkanExampleBase::VulkanExampleBase()
 	commandLineParser.add("benchmarkresultframes", { "-bt", "--benchframetimes" }, 0, "Save frame times to benchmark results file");
 	commandLineParser.add("benchmarkframes", { "-bfs", "--benchmarkframes" }, 1, "Only render the given number of frames");
 	commandLineParser.add("benchscreenshotinterval", { "-bsi", "--benchscreenshotinterval" }, 1, "Capture screenshot every N frames during benchmark");
-	commandLineParser.add("benchscreenshotprefix", { "-bsp", "--benchscreenshotprefix" }, 1, "Prefix for benchmark screenshot filenames");
+	commandLineParser.add("ssaopositionfp16", { "-sp16", "--ssaopositionfp16" }, 0, "Set ssao sample position buffer precision to fp16");
 #if (!(defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)))
 	commandLineParser.add("resourcepath", { "-rp", "--resourcepath" }, 1, "Set path for dir where assets and shaders folder is present");
 #endif
@@ -848,8 +848,8 @@ VulkanExampleBase::VulkanExampleBase()
 	if (commandLineParser.isSet("benchscreenshotinterval")) {
 		benchmark.screenshotInterval = commandLineParser.getValueAsInt("benchscreenshotinterval", 0);
 	}
-	if (commandLineParser.isSet("benchscreenshotprefix")) {
-		benchmark.screenshotPrefix = commandLineParser.getValueAsString("benchscreenshotprefix", benchmark.screenshotPrefix);
+	if (commandLineParser.isSet("ssaopositionfp16")) {
+		benchmark.ssaoFP16 = true;
 	}
 #if (!(defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)))
 	if(commandLineParser.isSet("resourcepath")) {

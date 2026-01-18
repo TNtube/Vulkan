@@ -6,6 +6,8 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
+#include <filesystem>
+
 #include "vulkanexamplebase.h"
 #include "VulkanglTFModel.h"
 #include "VulkanMemoryTracker.hpp"
@@ -270,8 +272,8 @@ public:
 		VkBool32 validDepthFormat = vks::tools::getSupportedDepthFormat(physicalDevice, &attDepthFormat);
 		assert(validDepthFormat);
 
-		// G-Buffer
-		createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.position, width, height, "gbuffer_position");
+		auto positionFormat = benchmark.ssaoFP16 ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R32G32B32A32_SFLOAT;
+		createAttachment(positionFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.position, width, height, "gbuffer_position");
 		createAttachment(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.normal, width, height, "gbuffer_normal");
 		createAttachment(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &frameBuffers.offscreen.albedo, width, height, "gbuffer_albedo");
 		createAttachment(attDepthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, &frameBuffers.offscreen.depth, width, height, "gbuffer_depth");
@@ -779,7 +781,10 @@ public:
 
 		VKS_MEMORY_SUMMARY();
 		if (benchmark.active) {
-			VKS_MEMORY_SAVE_CSV("benchmark/results/ssao_memory_baseline.csv");
+			std::filesystem::path path(benchmark.filename);
+			const auto extension = path.extension();
+			const auto memoryPath = path.replace_extension().string() + "_memory" + extension.string();
+			VKS_MEMORY_SAVE_CSV(memoryPath);
 		}
 	}
 
