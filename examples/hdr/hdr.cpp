@@ -11,8 +11,12 @@
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
 
+#include <filesystem>
+
 #include "vulkanexamplebase.h"
 #include "VulkanglTFModel.h"
+#include "VulkanMemoryTracker.hpp"
+#include "VulkanScreenshot.hpp"
 
 class VulkanExample : public VulkanExampleBase
 {
@@ -97,6 +101,16 @@ public:
 		VkSampler sampler;
 	} filterPass;
 
+	bool screenshotSaved = false;
+
+	void saveScreenshot(const std::string& filename) {
+		vks::Screenshot::save(
+			device, physicalDevice, vulkanDevice, queue,
+			swapChain.images[currentBuffer], swapChain.colorFormat,
+			width, height, filename);
+		screenshotSaved = true;
+	}
+
 	VulkanExample() : VulkanExampleBase()
 	{
 		title = "High dynamic range rendering";
@@ -137,24 +151,22 @@ public:
 		}
 	}
 
-	void createAttachment(VkFormat format, VkImageUsageFlagBits usage, FrameBufferAttachment *attachment)
+	void createAttachment(VkFormat format, VkImageUsageFlagBits usage, FrameBufferAttachment *attachment,
+		uint32_t imgWidth, uint32_t imgHeight, const std::string& tag = "")
 	{
 		VkImageAspectFlags aspectMask = 0;
-		VkImageLayout imageLayout;
 
 		attachment->format = format;
 
 		if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
 		{
 			aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
 		if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
 		{
 			aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 			if (format >= VK_FORMAT_D16_UNORM_S8_UINT)
 				aspectMask |=VK_IMAGE_ASPECT_STENCIL_BIT;
-			imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		}
 
 		assert(aspectMask > 0);
@@ -162,8 +174,8 @@ public:
 		VkImageCreateInfo image = vks::initializers::imageCreateInfo();
 		image.imageType = VK_IMAGE_TYPE_2D;
 		image.format = format;
-		image.extent.width = offscreen.width;
-		image.extent.height = offscreen.height;
+		image.extent.width = imgWidth;
+		image.extent.height = imgHeight;
 		image.extent.depth = 1;
 		image.mipLevels = 1;
 		image.arrayLayers = 1;
@@ -180,6 +192,8 @@ public:
 		memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &attachment->mem));
 		VK_CHECK_RESULT(vkBindImageMemory(device, attachment->image, attachment->mem, 0));
+
+		VKS_TRACK_ALLOC(attachment->mem, memAlloc.allocationSize, memAlloc.memoryTypeIndex, tag);
 
 		VkImageViewCreateInfo imageView = vks::initializers::imageViewCreateInfo();
 		imageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -202,12 +216,13 @@ public:
 			offscreen.height = height;
 
 			// Color attachments
+			auto hdrFormat = benchmark.hdrFP16 ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R32G32B32A32_SFLOAT;
 
 			// Two floating point color buffers
-			createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &offscreen.color[0]);
-			createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &offscreen.color[1]);
+			createAttachment(hdrFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &offscreen.color[0], width, height, "hdr_scene");
+			createAttachment(hdrFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &offscreen.color[1], width, height, "hdr_bloom_source");
 			// Depth attachment
-			createAttachment(depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, &offscreen.depth);
+			createAttachment(depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, &offscreen.depth, width, height, "hdr_depth");
 
 			// Set up separate renderpass with references to the color and depth attachments
 			std::array<VkAttachmentDescription, 3> attachmentDescs = {};
@@ -327,9 +342,10 @@ public:
 			filterPass.height = height;
 
 			// Color attachments
+			auto hdrFormat = benchmark.hdrFP16 ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R32G32B32A32_SFLOAT;
 
-			// Two floating point color buffers
-			createAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &filterPass.color[0]);
+			// Floating point color buffer for bloom filter
+			createAttachment(hdrFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, &filterPass.color[0], width, height, "hdr_bloom_filter");
 
 			// Set up separate renderpass with references to the color and depth attachments
 			std::array<VkAttachmentDescription, 1> attachmentDescs = {};
@@ -653,6 +669,14 @@ public:
 		setupDescriptors();
 		preparePipelines();
 		prepared = true;
+
+		VKS_MEMORY_SUMMARY();
+		if (benchmark.active) {
+			std::filesystem::path path(benchmark.filename);
+			const auto extension = path.extension();
+			const auto memoryPath = path.replace_extension().string() + "_memory" + extension.string();
+			VKS_MEMORY_SAVE_CSV(memoryPath);
+		}
 	}
 
 	void buildCommandBuffer()
@@ -811,6 +835,14 @@ public:
 			overlay->inputFloat("Exposure", &uniformData.exposure, 0.025f, 3);
 			overlay->checkBox("Bloom", &bloom);
 			overlay->checkBox("Skybox", &displaySkybox);
+		}
+		if (overlay->header("Capture")) {
+			if (overlay->button("Take screenshot")) {
+				saveScreenshot("hdr_baseline.ppm");
+			}
+			if (screenshotSaved) {
+				overlay->text("Screenshot saved");
+			}
 		}
 	}
 };

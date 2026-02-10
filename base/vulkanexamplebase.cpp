@@ -787,6 +787,7 @@ VulkanExampleBase::VulkanExampleBase()
 	commandLineParser.add("benchmarkframes", { "-bfs", "--benchmarkframes" }, 1, "Only render the given number of frames");
 	commandLineParser.add("benchscreenshotinterval", { "-bsi", "--benchscreenshotinterval" }, 1, "Capture screenshot every N frames during benchmark");
 	commandLineParser.add("ssaopositionfp16", { "-sp16", "--ssaopositionfp16" }, 0, "Set ssao sample position buffer precision to fp16");
+	commandLineParser.add("hdrfp16", { "-hdr16", "--hdrfp16" }, 0, "Set HDR offscreen buffer precision to fp16");
 #if (!(defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)))
 	commandLineParser.add("resourcepath", { "-rp", "--resourcepath" }, 1, "Set path for dir where assets and shaders folder is present");
 #endif
@@ -850,6 +851,9 @@ VulkanExampleBase::VulkanExampleBase()
 	}
 	if (commandLineParser.isSet("ssaopositionfp16")) {
 		benchmark.ssaoFP16 = true;
+	}
+	if (commandLineParser.isSet("hdrfp16")) {
+		benchmark.hdrFP16 = true;
 	}
 #if (!(defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)))
 	if(commandLineParser.isSet("resourcepath")) {

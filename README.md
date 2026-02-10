@@ -7,7 +7,7 @@ A comprehensive collection of open source C++ examples for [Vulkan®](https://ww
 ## Hybrid Precision info
 Building :
 ```bash
-cmake --build . --config Release --target ssao
+cmake --build . --config Release --target ssao, hdr
 ```
 
 ### FP32
@@ -15,10 +15,16 @@ benchmark time and memory :
 ```bash
 ./bin/Release/ssao.exe --benchmark --benchwarmup 2 --benchruntime 30 --benchfilename "benchmark/ssao/baseline_fp32.csv" --benchframetimes --width 1920 --height 1080
 ```
+```bash
+./bin/Release/hdr.exe --benchmark --benchwarmup 2 --benchruntime 30 --benchfilename "benchmark/hdr/baseline_fp32.csv" --benchframetimes --width 1920 --height 1080
+```
 
 benchmark screenshots :
 ```bash
 ./bin/Release/ssao.exe --benchmark --benchwarmup 2 --benchruntime 3 --benchscreenshotinterval 100 --benchfilename "benchmark/ssao/screenshots/baseline_fp32"
+```
+```bash
+./bin/Release/hdr.exe --benchmark --benchwarmup 2 --benchruntime 3 --benchscreenshotinterval 100 --benchfilename "benchmark/hdr/screenshots/baseline_fp32"
 ```
 
 ### FP16
@@ -26,10 +32,16 @@ benchmark time and memory :
 ```bash
 ./bin/Release/ssao.exe --benchmark --benchwarmup 2 --benchruntime 30 --benchfilename "benchmark/ssao/position_fp16.csv" --benchframetimes --width 1920 --height 1080 --ssaopositionfp16
 ```
+```bash
+./bin/Release/hdr.exe --benchmark --benchwarmup 2 --benchruntime 30 --benchfilename "benchmark/hdr/fp16.csv" --benchframetimes --width 1920 --height 1080 --hdrfp16
+```
 
 benchmark screenshots :
 ```bash
 ./bin/Release/ssao.exe --benchmark --benchwarmup 2 --benchruntime 3 --benchscreenshotinterval 100 --benchfilename "benchmark/ssao/screenshots/position_fp16" --ssaopositionfp16
+```
+```bash
+./bin/Release/hdr.exe --benchmark --benchwarmup 2 --benchruntime 3 --benchscreenshotinterval 100 --benchfilename "benchmark/hdr/screenshots/fp16" --hdrfp16
 ```
 
 

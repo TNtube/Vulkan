@@ -35,6 +35,7 @@ namespace vks
 
 		// Different buffer precisions switch
 		bool ssaoFP16 = false;
+		bool hdrFP16 = false;
 
 		double runtime = 0.0;
 		uint32_t frameCount = 0;

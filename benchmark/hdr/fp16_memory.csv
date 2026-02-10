@@ -1,0 +1,10 @@
+metric,value_bytes,value_mb
+total_allocated,70778880,67.5
+peak_allocated,70778880,67.5
+allocation_count,4,4
+
+tag,size_bytes,size_mb
+hdr_scene,17694720,16.875
+hdr_depth,17694720,16.875
+hdr_bloom_source,17694720,16.875
+hdr_bloom_filter,17694720,16.875
